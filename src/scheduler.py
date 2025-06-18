@@ -44,29 +44,13 @@ def execute_job():
     print("execution completed")
     #update database
     
-# def update_scores():
-#     '''Apply ageing: Reduce scores of existing jobs'''
-
-#     r = redis.Redis(host='localhost', port=6379, db=0)
-#     lua_script = """
-#     local key = KEYS[1]
-#     local members = redis.call('ZRANGE', key, 0, -1)
-#     for i=1,#members do
-#     redis.call('ZINCRBY', key, -1, members[i])
-#     end
-#     return true
-#     """
-
-#     r.eval(lua_script, 1, zset_key)
 
 def scheduler_loop():
     '''Every 1 min selects jobs from the database and add to redis.'''
-    while True:
-        # update_scores()
+    while True: 
         schedule_pending_jobs()
         time.sleep(60)
 if __name__=="__main__":
-    schedule_pending_jobs()
-    # update_scores()
+    schedule_pending_jobs() 
     # update_next_run('cade7f2c-6063-4ccf-a72a-8fce4f2d5b5f') 
     execute_job()
