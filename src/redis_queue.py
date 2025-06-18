@@ -10,11 +10,11 @@ def add_job_to_redis_queue(job, priority=100):
     redis_client.zadd(zset_key, {f"job:{job.id}": priority})
 
 def get_top_job():
-    job = []
-    for member in redis_client.zrange(zset_key, 0, 0, withscores=True):
-        job.append(member)
-    return job
+    result = redis_client.zrange("job_queue", 0, 0, withscores=True)
 
+    if result:
+        return result[0]
+    return None
 if __name__=="__main__":
      
     # Read back the data (ascending order by score)

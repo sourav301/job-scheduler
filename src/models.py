@@ -12,6 +12,7 @@ Base = declarative_base()
 class JobStatus(str, enum.Enum):
     '''Enum for All possible stages'''
     PENDING = "PENDING"
+    SCHEDULED = "SCHEDULED"
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"

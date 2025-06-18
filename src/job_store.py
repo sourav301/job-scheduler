@@ -14,11 +14,19 @@ class JobStore:
         self.db.commit()
         return job
     
-    def update_run_at(self,job,run_at):
+    def update_run_at(self,job_id,run_at):
+        job = self.db.query(Job).filter(Job.id == job_id).first()
         if job and run_at:
             job.run_at=run_at
             self.db.commit()
             print("run_at updated")
+    
+    def update_status(self,job_id,status):
+        job = self.db.query(Job).filter(Job.id == job_id).first()
+        if job and status:
+            job.status=status
+            self.db.commit()
+            print("status updated")
 
     def get_due_jobs(self, now):
         return self.db.query(Job).filter(Job.run_at <=now, Job.status==JobStatus.PENDING).all()
