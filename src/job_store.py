@@ -38,6 +38,7 @@ if __name__=="__main__":
     session = SessionLocal()
 
     job_store = JobStore(session)
-    res = job_store.add_job(job_data)
-    
-    print(res)
+    # res = job_store.add_job(job_data)
+    jobs = job_store.get_due_jobs(datetime.now(timezone.utc))
+    for job in jobs:
+        print(f"Job ID: {job.id}, Name: {job.name}, Run At: {job.run_at}, Status: {job.status}")
