@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
-from models import Job,JobStatus, Base
+from models import Job,JobStatus
 from datetime import datetime, timedelta, timezone
+from database import session
+
 class JobStore:
 
     def __init__(self, db_session: Session):
@@ -15,30 +17,20 @@ class JobStore:
     def get_due_jobs(self, now):
         return self.db.query(Job).filter(Job.run_at <=now, Job.status==JobStatus.PENDING).all()
     
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 if __name__=="__main__":
 
     start_time = datetime.now(timezone.utc) + timedelta(minutes=1)
-    job_data = {"name":"my_other", 
+    job_data = {"name":"my_other_job", 
                      "cron_expression":"1 2 * * *",
                      "run_at" : start_time,
+                     "estimated_runtime" : 60,
                      "parameters":{"path":"/home/user/job_file_1"}
-}
+    }
      
     
-    # Replace with your Postgres DB URL
-    DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/scheduler"
     
-    # Create DB engine and session
-    engine = create_engine(DATABASE_URL)
-    Base.metadata.create_all(engine)
-
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
-
     job_store = JobStore(session)
-    # res = job_store.add_job(job_data)
+    res = job_store.add_job(job_data)
     jobs = job_store.get_due_jobs(datetime.now(timezone.utc))
     for job in jobs:
         print(f"Job ID: {job.id}, Name: {job.name}, Run At: {job.run_at}, Status: {job.status}")

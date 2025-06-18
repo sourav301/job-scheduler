@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum, JSON
+from sqlalchemy import Column, String,Integer, DateTime, Enum, JSON
 from sqlalchemy.dialects.postgresql import UUID
 import enum
 import uuid
@@ -19,6 +19,7 @@ class Job(Base):
     name = Column(String, nullable=False)
     cron_expression = Column(String, nullable=True)
     run_at = Column(DateTime, nullable = True)
+    estimated_runtime = Column(Integer, nullable = False)
     parameters = Column(JSON)
     status = Column(Enum(JobStatus),default=JobStatus.PENDING)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
