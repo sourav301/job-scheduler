@@ -1,31 +1,25 @@
-from job_store import JobStore
-from database import session
+from job_store import JobStore 
 from datetime import datetime, timezone
 import redis
+from logger import AppLogger
+
+logger = AppLogger()
 
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
 zset_key = "job_queue"
     
 def add_job_to_redis_queue(job, priority=100):
-    redis_client.zadd(zset_key, {f"job:{job.id}": priority})
-
+    try:
+        redis_client.zadd(zset_key, {f"job:{job.id}": priority})
+    except redis.RedisError as e:
+        logger.error(f"Failed to add Job:{job.id} with priority {priority} to redis: {e}")
+        raise
 def get_top_job():
-    result = redis_client.zrange("job_queue", 0, 0, withscores=True)
-
-    if result:
-        return result[0]
-    return None
-if __name__=="__main__":
-     
-    # Read back the data (ascending order by score)
-    print("Jobs in queue (by score):")
-    
-
-    # job_store = JobStore(session)
-    # pending = job_store.get_due_jobs(datetime.now(timezone.utc))
-    # for job in pending:
-    #     print(f"Job ID: {job.id}, Name: {job.name}, Run At: {job.run_at}, Status: {job.status}")
-    #     redis_client.zadd(zset_key, {f"job:{job.id}": 100})
-    # print(get_top_job())
-
-    
+    try:
+        result = redis_client.zrange("job_queue", 0, 0, withscores=True)
+        if result:
+            return result[0]
+        return None
+    except redis.RedisError as e:
+        logger.error(f"Failed to get top job from redis: {e}")
+        raise

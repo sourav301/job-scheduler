@@ -5,9 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import enum
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from database import Base
 
 class JobStatus(str, enum.Enum):
     '''Enum for All possible stages'''
