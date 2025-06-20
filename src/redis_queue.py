@@ -2,24 +2,36 @@ from job_store import JobStore
 from datetime import datetime, timezone
 import redis
 from logger import AppLogger
+from config import ZSET_KEY, REDIS_PORT, REDIS_SERVER
 
 logger = AppLogger()
 
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
-zset_key = "job_queue"
+class RedisClient:
     
-def add_job_to_redis_queue(job, priority=100):
-    try:
-        redis_client.zadd(zset_key, {f"job:{job.id}": priority})
-    except redis.RedisError as e:
-        logger.error(f"Failed to add Job:{job.id} with priority {priority} to redis: {e}")
-        raise
-def get_top_job():
-    try:
-        result = redis_client.zrange("job_queue", 0, 0, withscores=True)
-        if result:
-            return result[0]
-        return None
-    except redis.RedisError as e:
-        logger.error(f"Failed to get top job from redis: {e}")
-        raise
+    def __init__(self):
+    
+        self.redis_client = redis.Redis(host=REDIS_SERVER, port=REDIS_PORT, db=0)
+        self.zset_key = ZSET_KEY
+        
+    def add_job_to_redis_queue(self, job, priority=100):
+        try:
+            self.redis_client.zadd(self.zset_key, {f"job:{job.id}": priority})
+        except redis.RedisError as e:
+            logger.error(f"Failed to add Job:{job.id} with priority {priority} to redis: {e}")
+            raise
+    
+    def get_top_job(self):
+        try:
+            result = self.redis_client.zrange(ZSET_KEY, 0, 0, withscores=True)
+            if result: 
+                job_id = result[0][0].decode(('utf-8'))
+                self.redis_client.zrem(ZSET_KEY, job_id)
+                return job_id.split(":")[1]
+            return None
+        except redis.RedisError as e:
+            logger.error(f"Failed to get top job from redis: {e}")
+            raise
+     
+
+    def add_to_list(self, data):
+        self.redis_client.zadd(self.zset_key, data)

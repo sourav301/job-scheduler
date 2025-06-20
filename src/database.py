@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-# Replace with your Postgres DB URL
-DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/scheduler"
+from config import DATABASE_URL
 
 # Create DB engine and session
 engine = create_engine(DATABASE_URL)

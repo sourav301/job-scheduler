@@ -25,17 +25,24 @@ class JobStore:
             logger.info("run_at updated")
     
     def update_status(self,job_id,status):
+        logger.info(f"Updating status for {job_id} with {status}")
         job = self.db.query(Job).filter(Job.id == job_id).first()
         if job and status:
             job.status=status
             self.db.commit()
-            logger.info("status updated")
+            logger.info(f"{job_id} status updated to {status}")
+            self.db.refresh(job)
 
     def get_due_jobs(self, now):
         return self.db.query(Job).filter(Job.run_at <=now, Job.status==JobStatus.PENDING).all()
     
     def get_job(self, job_id):
-        return self.db.query(Job).filter(Job.id == job_id).first()
+        logger.info(f"get_job {job_id}")
+        job = self.db.query(Job).filter(Job.id == job_id).first()
+        if job:
+            return job
+        else:
+            logger.info(f"{job_id} is not found")
 
     def get_all_jobs(self):
         return self.db.query(Job)

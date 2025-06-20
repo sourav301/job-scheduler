@@ -15,10 +15,14 @@ from scheduler import JobScheduler
 async def lifespan(app: FastAPI):
     '''Start loop to add job to redis'''
     strategy = SJF_SchedulerStrategy()
+    # Job scheduler 
     job_scheduler = JobScheduler(strategy,db=SessionLocal())
-    task = asyncio.create_task(job_scheduler.scheduler_loop())
+    scheduler_task = asyncio.create_task(job_scheduler.scheduler_loop())
+    # Job executor 
+    executor_task = asyncio.create_task(job_scheduler.executor_loop())
     yield
-    task.cancel() 
+    scheduler_task.cancel() 
+    executor_task.cancel() 
 
 app = FastAPI(lifespan=lifespan)
 

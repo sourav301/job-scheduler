@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: scheduler_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: scheduler
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # scheduler_service:
+  #   build: .
+  #   container_name: scheduler_service
+  #   restart: always
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - DB_URL=postgresql://postgres:postgres@postgres:5432/scheduler
+  #   depends_on:
+  #     - postgres
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  redis:
+    image: redis:7.2 
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: always
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+volumes:
+  postgres_data:
