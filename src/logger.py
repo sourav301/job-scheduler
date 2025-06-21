@@ -24,7 +24,7 @@ class AppLogger:
         self.logger.info(message)
 
     def error(self, message: str):
-        self.logger.error(message)
+        self.logger.error(message,exc_info=True)
 
     def debug(self, message: str):
         self.logger.debug(message)

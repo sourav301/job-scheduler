@@ -48,11 +48,12 @@ class JobScheduler:
     def update_next_run(self,job_id):
         '''Evaluate cron expression for completed job and update run_at column'''
         job = self.job_store.get_job(job_id) 
-        now = datetime.now(timezone.utc)
-        cron = croniter(job.cron_expression,now)
-        next = cron.get_next(datetime)
-        self.job_store.update_run_at(job_id,next)
-        logger.info(f"{job_id}: Next run scheduled at {next}")
+        if job:
+            now = datetime.now(timezone.utc)
+            cron = croniter(job.cron_expression,now)
+            next = cron.get_next(datetime)
+            self.job_store.update_run_at(job_id,next)
+            logger.info(f"{job_id}: Next run scheduled at {next}")
         
     def execute_job(self):
         '''Execute highest priority job'''
@@ -94,9 +95,13 @@ class JobScheduler:
             await asyncio.sleep(3)
             i+=1 
             
-# if __name__=="__main__":
-#     from src.strategies import SJF_SchedulerStrategy
-#     from src.database import get_db
-#     db = next(get_db())
-#     job_scheduler = JobScheduler(SJF_SchedulerStrategy, db)
-#     job_scheduler.update_next_run("1227b5b7-4b18-4ced-8c1a-9f2f242c4032")
+if __name__=="__main__":
+    from src.strategies import SJF_SchedulerStrategy
+    from src.database import get_db
+    db = next(get_db())
+    job_scheduler = JobScheduler(SJF_SchedulerStrategy, db)
+    job_scheduler.update_next_run("5ee6c90e-6a91-40cb-8683-d7238101afc5")
+    
+    job_store = JobStore(db) 
+    job_store.update_run_at("5ee6c90e-6a91-40cb-8683-d7238101afc5",datetime.now(timezone.utc))
+

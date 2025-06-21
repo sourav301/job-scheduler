@@ -1,3 +1,4 @@
+import functools
 from sqlalchemy.orm import Session
 from src.models import Job,JobStatus
 from datetime import datetime,  timezone 
@@ -10,37 +11,53 @@ class JobStore:
 
     def __init__(self, db_session: Session):
         self.db = db_session
-    
+
+    def db_transaction(func):
+        '''Decorator to wrap database operations in a transaction
+        Args:
+            func (Callable): The repository method to wrap.
+        Returns:
+            Callable: Wrapped function with automatic transaction management.
+        Raises:
+            Propagates any exception after rolling back the transaction.'''
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            try:
+                result = func(self,*args,**kwargs)
+                self.db.commit()
+                return result
+            except Exception as e:
+                self.db.rollback()
+                logger.error(f"Database error in {func.__name__}: {e}")
+                raise 
+        return wrapper
+
+    @db_transaction
     def add_job(self,job_data):
         job = Job(**job_data)
-        self.db.add(job)
-        self.db.commit()
+        self.db.add(job) 
         return job
-    
-    def update_run_at(self,job_id,run_at):
-        job = self.db.query(Job).filter(Job.id == job_id).first()
-        if job and run_at:
-            job.run_at=run_at
-            self.db.commit()
-            logger.info(f"Database: {job_id} next runat updated")
-            self.db.refresh(job)
-    
+
+    def __update_fields(self, job_id, update_dict):
+        '''Private method to update model data'''
+        updated_rows = self.db.query(Job).filter(Job.id == job_id).update(update_dict)
+        if updated_rows:
+            logger.info(f"Database: {job_id} next run updated to {update_dict.keys()}")
+        else:
+            logger.warning(f"Database: {job_id} not found")
+
+    @db_transaction
+    def update_run_at(self,job_id,run_at): 
+        return self.__update_fields(job_id, {"run_at":run_at})
+
+    @db_transaction
     def update_status(self,job_id,status):
-        job = self.db.query(Job).filter(Job.id == job_id).first()
-        if job and status:
-            job.status=status
-            self.db.commit()
-            logger.info(f"Database: {job_id} status updated to {status}")
-            self.db.refresh(job)
+        return self.__update_fields(job_id, {"status":status})
 
+
+    @db_transaction
     def update_successful_run(self,job_id, time):
-        job = self.db.query(Job).filter(Job.id == job_id).first()
-        if job and time:
-            job.last_successful_run=time
-            self.db.commit()
-            logger.info(f"Database: {job_id} status updated to {time}")
-            self.db.refresh(job)
-
+        return self.__update_fields(job_id, {"last_successful_run":time})
 
 
     def get_due_jobs(self, now):
@@ -52,6 +69,7 @@ class JobStore:
             return job
         else:
             logger.info(f"Database: {job_id} is not found")
+            return None
 
     def get_all_jobs(self):
         return self.db.query(Job)
