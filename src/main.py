@@ -1,19 +1,20 @@
 from fastapi import FastAPI, Depends
 from typing import List
 from uuid import UUID 
-from models import Job
-from job_store import JobStore
-from schema import JobCreate, JobRead, JobReadMin
-from database import get_db, SessionLocal  
-from sqlalchemy.orm import Session
 import asyncio
 from contextlib import asynccontextmanager
-from strategies import  SJF_SchedulerStrategy
-from scheduler import JobScheduler
+from sqlalchemy.orm import Session
+from src.models import Job
+from src.strategies import  SJF_SchedulerStrategy
+from src.scheduler import JobScheduler
+from src.job_store import JobStore
+from src.schema import JobCreate, JobRead, JobReadMin
+from src.database import get_db, SessionLocal, engine, Base 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     '''Start loop to add job to redis'''
+    Base.metadata.create_all(bind=engine)
     strategy = SJF_SchedulerStrategy()
     # Job scheduler 
     job_scheduler = JobScheduler(strategy,db=SessionLocal())
@@ -31,6 +32,7 @@ def create_job(job: JobCreate,  db: Session = Depends(get_db)):
     '''Create new job in database'''
     db_job = Job(
         name = job.name,
+        job_type=job.job_type,
         cron_expression=job.cron_expression,
         run_at=job.run_at,
         estimated_runtime = job.estimated_runtime,

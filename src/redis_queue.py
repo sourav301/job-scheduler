@@ -1,8 +1,6 @@
-from job_store import JobStore 
-from datetime import datetime, timezone
 import redis
-from logger import AppLogger
-from config import ZSET_KEY, REDIS_PORT, REDIS_SERVER
+from src.logger import AppLogger
+from src.config import ZSET_KEY, REDIS_PORT, REDIS_SERVER
 
 logger = AppLogger()
 
@@ -26,6 +24,7 @@ class RedisClient:
             if result: 
                 job_id = result[0][0].decode(('utf-8'))
                 self.redis_client.zrem(ZSET_KEY, job_id)
+                logger.info(f"Redis: get top - {job_id}")
                 return job_id.split(":")[1]
             return None
         except redis.RedisError as e:
@@ -35,3 +34,4 @@ class RedisClient:
 
     def add_to_list(self, data):
         self.redis_client.zadd(self.zset_key, data)
+        logger.info(f"Redis: Added - {data}")

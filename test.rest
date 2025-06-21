@@ -1,0 +1,8 @@
+POST http://localhost:8000/v1/jobs
+Content-Type: application/json
+
+{
+  "name": "Weekly Report Email",
+  "description": "Send summary report to management",
+  "cron_expression": "0 9 * * 1"
+}

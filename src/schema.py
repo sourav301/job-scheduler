@@ -2,18 +2,19 @@
 the job scheduler API'''
 
 from uuid import UUID
-from pydantic import BaseModel, Field
-from typing import Optional, Any 
 from datetime import datetime 
-from models import JobStatus
+from typing import Optional, Any, Dict
+from pydantic import BaseModel
+from src.models import JobStatus, JobType
 
 class JobCreate(BaseModel):
     '''Create a job'''
     name: str 
+    job_type: Optional[JobType] = JobType.ONETIME
     cron_expression: Optional[str] = None
     run_at: Optional[datetime] = None
     estimated_runtime: int
-    parameters: Any  # JSON type, you can make it Dict[str, Any] if you want
+    parameters: Dict[str, Any]  
 
     class Config:
         orm_mode = True
@@ -21,6 +22,7 @@ class JobCreate(BaseModel):
             "example": {
                 "name": "Data Backup Job",
                 "cron_expression": "0 0 * * *",
+                "job_type": "ONETIME",
                 "run_at": "2025-06-18T16:00:00Z",
                 "estimated_runtime": 30,
                 "parameters": {"location": "/mnt/backup"}
@@ -31,6 +33,7 @@ class JobRead(BaseModel):
     '''All details for a job'''
     id: UUID
     name: str
+    job_type: Optional[JobType] = JobType.ONETIME
     cron_expression: Optional[str] = None
     run_at: Optional[datetime] = None
     estimated_runtime: int

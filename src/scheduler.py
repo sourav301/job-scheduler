@@ -1,18 +1,23 @@
-'''Implementation of shortest job first with ageing'''
-from job_store import JobStore
-from models import JobStatus, Job 
+'''Schedule jobs by following the following steps.
+1. Gets pending jobs from datatbase.
+2. Calculate score or priority of job.
+3. Pushes job to redis list.
+4. Gets job with lowest score for execution.
+5. Update status of job in database - SCHEDULED, COMPLETED, etc
+ '''
 from datetime import datetime, timezone, timedelta
-from redis_queue import RedisClient 
-import redis
 from croniter import croniter
 import time  
 import asyncio
-from strategies import SchedulerStrategy
-from logger import AppLogger 
-from redis_queue import RedisClient
+from src.redis_queue import RedisClient 
+from src.strategies import SchedulerStrategy
+from src.logger import AppLogger 
+from src.redis_queue import RedisClient
+from src.job_store import JobStore
+from src.models import JobStatus, JobType 
+
 logger = AppLogger()
 
-       
 class JobScheduler:
     
     def __init__(self, scheduler_strategy: SchedulerStrategy, db):
@@ -24,10 +29,11 @@ class JobScheduler:
     def schedule_pending_jobs(self):
         '''Schedule if the job was scheduled to be run in last 1 min and still in pending'''
         pending = self.job_store.get_due_jobs(datetime.now(timezone.utc))
-        logger.info(f"No. of pending jobs: {len(pending)}")
+        if len(pending)>0:
+            logger.info(f"No. of pending jobs: {len(pending)}")
         
         for job in pending:
-            # self.update_next_run(job.id, job.cron_expression)
+            
             now = datetime.now(timezone.utc) 
 
             # Loop over jobs that should have started in the last 1 min
@@ -38,13 +44,12 @@ class JobScheduler:
         score = self.scheduler_strategy.calculate_score(job)
         self.redis_client.add_to_list({f"job:{job.id}": score})
         self.job_store.update_status(job.id,JobStatus.SCHEDULED)
-        logger.info(f"Schedule,{abs(job.run_at-now)}")
 
-    def update_next_run(self,job_id, cron_expression):
+    def update_next_run(self,job_id):
         '''Evaluate cron expression for completed job and update run_at column'''
-        
+        job = self.job_store.get_job(job_id) 
         now = datetime.now(timezone.utc)
-        cron = croniter(cron_expression,now)
+        cron = croniter(job.cron_expression,now)
         next = cron.get_next(datetime)
         self.job_store.update_run_at(job_id,next)
         logger.info(f"{job_id}: Next run scheduled at {next}")
@@ -56,9 +61,17 @@ class JobScheduler:
             return
         job = self.job_store.get_job(job_id)
         logger.info(f"Executing job: {job_id}: Estimated runtime: {job.estimated_runtime}") 
-        time.sleep(3)
+        time.sleep(job.estimated_runtime)
         logger.info("Execution completed") 
-        self.job_store.update_status(job_id,JobStatus.COMPLETED)
+
+        if job.job_type==JobType.ONETIME:
+            self.job_store.update_status(job_id,JobStatus.COMPLETED)
+            
+        elif job.job_type==JobType.RECURRING:
+            self.job_store.update_status(job_id,JobStatus.PENDING)
+            self.update_next_run(job_id)
+
+        self.job_store.update_successful_run(job_id,datetime.now(timezone.utc))
         
 
     async def scheduler_loop(self):
@@ -76,8 +89,14 @@ class JobScheduler:
         logger.info("Scheduler loop")
         i=0
         while True:
-            logger.info(f"Executor loop: {i}") 
+            # logger.info(f"Executor loop: {i}") 
             await asyncio.get_event_loop().run_in_executor(None,  self.execute_job)
             await asyncio.sleep(3)
             i+=1 
             
+# if __name__=="__main__":
+#     from src.strategies import SJF_SchedulerStrategy
+#     from src.database import get_db
+#     db = next(get_db())
+#     job_scheduler = JobScheduler(SJF_SchedulerStrategy, db)
+#     job_scheduler.update_next_run("1227b5b7-4b18-4ced-8c1a-9f2f242c4032")

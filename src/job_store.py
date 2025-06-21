@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from models import Job,JobStatus
+from src.models import Job,JobStatus
 from datetime import datetime,  timezone 
-from database import get_db
-from logger import AppLogger
+from src.database import get_db
+from src.logger import AppLogger
 
 logger = AppLogger()
 
@@ -22,27 +22,36 @@ class JobStore:
         if job and run_at:
             job.run_at=run_at
             self.db.commit()
-            logger.info("run_at updated")
+            logger.info(f"Database: {job_id} next runat updated")
+            self.db.refresh(job)
     
     def update_status(self,job_id,status):
-        logger.info(f"Updating status for {job_id} with {status}")
         job = self.db.query(Job).filter(Job.id == job_id).first()
         if job and status:
             job.status=status
             self.db.commit()
-            logger.info(f"{job_id} status updated to {status}")
+            logger.info(f"Database: {job_id} status updated to {status}")
             self.db.refresh(job)
+
+    def update_successful_run(self,job_id, time):
+        job = self.db.query(Job).filter(Job.id == job_id).first()
+        if job and time:
+            job.last_successful_run=time
+            self.db.commit()
+            logger.info(f"Database: {job_id} status updated to {time}")
+            self.db.refresh(job)
+
+
 
     def get_due_jobs(self, now):
         return self.db.query(Job).filter(Job.run_at <=now, Job.status==JobStatus.PENDING).all()
     
     def get_job(self, job_id):
-        logger.info(f"get_job {job_id}")
         job = self.db.query(Job).filter(Job.id == job_id).first()
         if job:
             return job
         else:
-            logger.info(f"{job_id} is not found")
+            logger.info(f"Database: {job_id} is not found")
 
     def get_all_jobs(self):
         return self.db.query(Job)
@@ -73,4 +82,4 @@ if __name__=="__main__":
     
     jobs = job_store.get_due_jobs(datetime.now(timezone.utc))
     for job in jobs:
-        logger.info(f"Job ID: {job.id}, Name: {job.name}, Run At: {job.run_at}, Status: {job.status}")
+        logger.info(f"Database: Job ID: {job.id}, Name: {job.name}, Run At: {job.run_at}, Status: {job.status}")
