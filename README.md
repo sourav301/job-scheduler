@@ -6,6 +6,15 @@
 docker-compose up --build
 ```
 
+### Use REST API
+- [Swagger UI] http://localhost:8000/docs 
+
+### View Database
+- [PostgreSQL Admin] http://localhost:8080/
+
+### View Redis
+- [Redis UI] http://localhost:8081/
+
 ## Task breakup
 
 ### Functional requirements
