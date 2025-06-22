@@ -26,6 +26,8 @@ docker-compose up --build
 ## Architecture
 1. Save to persistant storage with horizontal scaling.
 
+Solution: Using postgreSQL server
+
 2. Select jobs that are ready to be scheduled and put in a qriority queue. 
 
 Solution: Redis cluster to implement priority queue using redis sorted set (ZSET).
