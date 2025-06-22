@@ -3,8 +3,10 @@
 import enum
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String,Integer, DateTime, Enum, JSON
+from sqlalchemy import Column, String,Integer, DateTime, Enum, JSON, Index
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
+
 from src.database import Base
 
 class JobStatus(str, enum.Enum):
@@ -30,5 +32,9 @@ class Job(Base):
     parameters = Column(JSON)
     status = Column(Enum(JobStatus),default=JobStatus.PENDING)
     last_successful_run = Column(DateTime, default=None)
-    created_at = Column(DateTime, default=datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    __table_args__ = (
+        Index('run_at', 'status'),
+    )
+    

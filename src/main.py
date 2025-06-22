@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from typing import List
 from uuid import UUID 
+from datetime import datetime
 import asyncio
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
@@ -14,10 +15,13 @@ from src.database import get_db, SessionLocal, engine, Base
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     '''Start loop to add job to redis'''
+    db = SessionLocal()
+    today = datetime.today() 
+
     Base.metadata.create_all(bind=engine)
     strategy = SJF_SchedulerStrategy()
     # Job scheduler 
-    job_scheduler = JobScheduler(strategy,db=SessionLocal())
+    job_scheduler = JobScheduler(strategy,db=db)
     scheduler_task = asyncio.create_task(job_scheduler.scheduler_loop())
     # Job executor 
     executor_task = asyncio.create_task(job_scheduler.executor_loop())

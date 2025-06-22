@@ -61,6 +61,9 @@ class JobScheduler:
         if job_id is None:
             return
         job = self.job_store.get_job(job_id)
+        if not job:
+            logger.error(f"Executing job: Not found: {job_id} ")
+            return 
         logger.info(f"Executing job: {job_id}: Estimated runtime: {job.estimated_runtime}") 
         time.sleep(job.estimated_runtime)
         logger.info("Execution completed") 
@@ -87,21 +90,21 @@ class JobScheduler:
 
     async def executor_loop(self):
         '''Poll jobs from redis and execute'''
-        logger.info("Scheduler loop")
+        logger.info("Executor loop")
         i=0
         while True:
-            # logger.info(f"Executor loop: {i}") 
+            logger.info(f"Executor loop: {i}") 
             await asyncio.get_event_loop().run_in_executor(None,  self.execute_job)
             await asyncio.sleep(3)
             i+=1 
             
-if __name__=="__main__":
-    from src.strategies import SJF_SchedulerStrategy
-    from src.database import get_db
-    db = next(get_db())
-    job_scheduler = JobScheduler(SJF_SchedulerStrategy, db)
-    job_scheduler.update_next_run("5ee6c90e-6a91-40cb-8683-d7238101afc5")
+# if __name__=="__main__":
+#     from src.strategies import SJF_SchedulerStrategy
+#     from src.database import get_db
+#     db = next(get_db())
+#     job_scheduler = JobScheduler(SJF_SchedulerStrategy, db)
+#     job_scheduler.update_next_run("5ee6c90e-6a91-40cb-8683-d7238101afc5")
     
-    job_store = JobStore(db) 
-    job_store.update_run_at("5ee6c90e-6a91-40cb-8683-d7238101afc5",datetime.now(timezone.utc))
+#     job_store = JobStore(db) 
+#     job_store.update_run_at("5ee6c90e-6a91-40cb-8683-d7238101afc5",datetime.now(timezone.utc))
 

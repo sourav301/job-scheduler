@@ -44,7 +44,7 @@ class JobStore:
         if updated_rows:
             logger.info(f"Database: {job_id} update {' '.join(list(update_dict.keys()))}")
         else:
-            logger.warning(f"Database: {job_id} not found")
+            logger.warning(f"Database: Update field {job_id} not found")
 
     @db_transaction
     def update_run_at(self,job_id,run_at): 
@@ -68,7 +68,7 @@ class JobStore:
         if job:
             return job
         else:
-            logger.info(f"Database: {job_id} is not found")
+            logger.info(f"Database: Get job : {job_id} is not found")
             return None
 
     def get_all_jobs(self):

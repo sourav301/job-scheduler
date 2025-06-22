@@ -14,16 +14,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # scheduler_service:
-  #   build: .
-  #   container_name: scheduler_service
-  #   restart: always
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - DB_URL=postgresql://postgres:postgres@postgres:5432/scheduler
-  #   depends_on:
-  #     - postgres
+
   adminer:
     image: adminer
     container_name: adminer
@@ -46,5 +37,16 @@ services:
       - REDIS_HOSTS=local:redis:6379
     depends_on:
       - redis
+  
+  fastapi:
+    build: .
+    restart: always 
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/code/app
 volumes:
   postgres_data:
