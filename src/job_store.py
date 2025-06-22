@@ -42,7 +42,7 @@ class JobStore:
         '''Private method to update model data'''
         updated_rows = self.db.query(Job).filter(Job.id == job_id).update(update_dict)
         if updated_rows:
-            logger.info(f"Database: {job_id} next run updated to {update_dict.keys()}")
+            logger.info(f"Database: {job_id} update {' '.join(list(update_dict.keys()))}")
         else:
             logger.warning(f"Database: {job_id} not found")
 

@@ -20,10 +20,9 @@ class RedisClient:
     
     def get_top_job(self):
         try:
-            result = self.redis_client.zrange(ZSET_KEY, 0, 0, withscores=True)
+            result = self.redis_client.zpopmin(ZSET_KEY, 1)
             if result: 
-                job_id = result[0][0].decode(('utf-8'))
-                self.redis_client.zrem(ZSET_KEY, job_id)
+                job_id = result[0][0].decode(('utf-8')) 
                 logger.info(f"Redis: get top - {job_id}")
                 return job_id.split(":")[1]
             return None

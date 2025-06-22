@@ -36,8 +36,8 @@ class JobScheduler:
             
             now = datetime.now(timezone.utc) 
 
-            # Loop over jobs that should have started in the last 1 min
-            if abs(job.run_at-now)<timedelta(days=1) and job.status==JobStatus.PENDING:
+            # Loop over jobs that should have started by now
+            if job.run_at<now and job.status==JobStatus.PENDING:
                 self.schedule_jobs(now, job)
 
     def schedule_jobs(self, now, job):
@@ -53,7 +53,7 @@ class JobScheduler:
             cron = croniter(job.cron_expression,now)
             next = cron.get_next(datetime)
             self.job_store.update_run_at(job_id,next)
-            logger.info(f"{job_id}: Next run scheduled at {next}")
+            logger.info(f"Scheduler: {job_id}: Next run scheduled at {next}")
         
     def execute_job(self):
         '''Execute highest priority job'''
