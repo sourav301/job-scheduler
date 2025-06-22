@@ -2,32 +2,44 @@
 the job scheduler API'''
 
 from uuid import UUID
-from datetime import datetime 
+from datetime import datetime, timezone
 from typing import Optional, Any, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from src.models import JobStatus, JobType
 
-class JobCreate(BaseModel):
-    '''Create a job'''
-    name: str 
-    job_type: Optional[JobType] = JobType.ONETIME
-    cron_expression: Optional[str] = None
-    run_at: Optional[datetime] = None
-    estimated_runtime: int
-    parameters: Dict[str, Any]  
 
+class JobCreate(BaseModel):
+    """
+    Request model to create a job.
+    """
+    name: str = Field(..., description="Name of the job", example="Number Crunching Job")
+    job_type: Optional[JobType] = Field(
+        default=JobType.ONETIME, 
+        description="Type of the job: ONETIME or RECURRING",
+        example="ONETIME"
+    )
+    cron_expression: Optional[str] = Field(
+        default=None, 
+        description="Cron expression for recurring jobs. Required if job_type is RECURRING.",
+        example="* * * * *"
+    )
+    run_at: Optional[datetime] = Field(
+        default=None, 
+        description="Scheduled time for jobs in ISO format (UTC).",
+        example=datetime.now(timezone.utc)
+    )
+    estimated_runtime: int = Field(
+        ..., 
+        description="Estimated runtime in seconds", 
+        example=30
+    )
+    parameters: Dict[str, Any] = Field(
+        ..., 
+        description="Dictionary of parameters required by the job", 
+        example={"service":"my-service","source": "s3://my-bucket"}
+    )
     class Config:
-        orm_mode = True
-        schema_extra = {
-            "example": {
-                "name": "Data Backup Job",
-                "cron_expression": "0 0 * * *",
-                "job_type": "ONETIME",
-                "run_at": "2025-06-18T16:00:00Z",
-                "estimated_runtime": 30,
-                "parameters": {"location": "/mnt/backup"}
-            }
-        }
+        orm_mode = True 
 
 class JobRead(BaseModel):
     '''All details for a job'''
